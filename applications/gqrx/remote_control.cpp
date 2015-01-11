@@ -183,12 +183,12 @@ void RemoteControl::acceptConnection()
  * This slot is called when the client TCP socket emits a readyRead() signal,
  * i.e. when there is data to read.
  */
-void RemoteControl::startRead()
+void RemoteControl::startRead(QSettings *settings)
 {
     char    buffer[1024] = {0};
     int     bytes_read;
     qint64  freq;
-
+    bool conv_ok;
 
     bytes_read = rc_socket->readLine(buffer, 1024);
     if (bytes_read < 2)  // command + '\n'
@@ -280,6 +280,7 @@ void RemoteControl::startRead()
     // PPM
     else if (buffer[0] == 'p') // get PPM
     {
+        rc_ppm = settings->value("input/corr_freq", 0).toLongLong(&conv_ok);
         rc_socket->write(QString("%1\n").arg(rc_ppm).toLatin1());
         printf("Bytes on p send: %i\n", bytes_read);
     }

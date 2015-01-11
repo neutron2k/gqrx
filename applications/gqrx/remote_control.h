@@ -113,7 +113,7 @@ signals:
 
 private slots:
     void acceptConnection();
-    void startRead();
+    void startRead(QSettings *settings);
 
 private:
     QTcpServer  rc_server;         /*!< The active server object. */
