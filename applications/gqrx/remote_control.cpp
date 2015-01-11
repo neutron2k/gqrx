@@ -34,6 +34,27 @@ RemoteControl::RemoteControl(QObject *parent) :
 
     signal_level = -200.0;
 
+    //------------------------
+    // start new vars
+    // currently set to arbitrary values until linked 
+    //------------------------
+
+    rc_gain = 1.0;
+    rc_ppm = 0;
+    rc_lnb = 3.0;
+    rc_squelch = 4.0;
+    rc_ro = 5.0;
+    rc_bandwidth = 6.0;
+    rc_fft_size = 7.0;
+    rc_fft_zoom = 8.0;
+    rc_usb = 9.0;
+    rc_fullscreen = 1.1;
+    rc_udp_audio = 1.2;
+
+    //------------------------
+    // end new vars
+    //------------------------
+
     rc_port = 7356;
     rc_allowed_hosts.append("127.0.0.1");
 
@@ -72,6 +93,15 @@ void RemoteControl::readSettings(QSettings *settings)
 
     rc_freq = settings->value("input/frequency", 144500000).toLongLong(&conv_ok);
     rc_filter_offset = settings->value("receiver/offset", 0).toInt(&conv_ok);
+
+
+    //------------------------
+    // start new
+
+    rc_ppm = settings->value("input/corr_freq", 0).toLongLong(&conv_ok);
+
+    // end new
+    //------------------------
 
     // Get port number; restart server if running
     rc_port = settings->value("remote_control/port", 7356).toInt(&conv_ok);
@@ -163,7 +193,6 @@ void RemoteControl::startRead()
     bytes_read = rc_socket->readLine(buffer, 1024);
     if (bytes_read < 2)  // command + '\n'
         return;
-
     if (buffer[0] == 'F')
     {
         // set frequency
@@ -196,7 +225,7 @@ void RemoteControl::startRead()
     }
 
     // Mode and filter
-    else if (buffer[0] == 'M')
+    else if (buffer[0] == 'M') 
     {
         int mode = modeStrToInt(buffer);
         if (mode == -1)
@@ -211,10 +240,410 @@ void RemoteControl::startRead()
             emit newMode(rc_mode);
         }
     }
-    else if (buffer[0] == 'm')
+    else if (buffer[0] == 'm') 
     {
         rc_socket->write(QString("%1\n").arg(intToModeStr(rc_mode)).toLatin1());
     }
+
+
+    //------------------------
+    // start new features
+    //------------------------
+
+    // Gain
+    else if (buffer[0] == 'g' && bytes_read == 2) // get Gain
+    {
+        rc_socket->write(QString("%1\n").arg(rc_gain).toLatin1());
+    }
+    else if (buffer[0] == 'G') // set Gain
+    {
+        // http://i.imgur.com/l3v4P3s.jpg
+        // first try at setting the gain - does not work 
+        rc_socket->write("RPRT 2\n");
+        const char *c_str2 = "LNA";
+        QString LNASTR = QString(QLatin1String(c_str2));
+        emit newGain(LNASTR, 2.00032);
+        printf("setting gain\n"); // this is called, but the gain is not updated
+
+    }
+
+    // LNB
+    else if (buffer[0] == 'n' && bytes_read == 2) // get LNB
+    {
+        rc_socket->write(QString("%1\n").arg(rc_lnb, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'N') // set LNB
+    {
+        rc_socket->write("RPRT 2\n"); // this is arbitrary output - testing the telnet inputs
+    }
+
+    // PPM
+    else if (buffer[0] == 'p') // get PPM
+    {
+        rc_socket->write(QString("%1\n").arg(rc_ppm).toLatin1());
+        printf("Bytes on p send: %i\n", bytes_read);
+    }
+    else if (buffer[0] == 'P') // set PPM
+    {
+        printf("Bytes on p send: %i\n", bytes_read);
+    }
+
+    // Squelch
+    else if (buffer[0] == 's' && bytes_read == 2) // get squelch
+    {
+        rc_socket->write(QString("%1\n").arg(rc_squelch, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'S') // set squelch
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // RO
+    else if (buffer[0] == 'r' && bytes_read == 2) // get RO
+    {
+        rc_socket->write(QString("%1\n").arg(rc_ro, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'R') // set RO
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // Audio Gain
+    else if (buffer[0] == 'a' && bytes_read == 2) // get Audio Gain
+    {
+        rc_socket->write(QString("%1\n").arg(rc_audio_gain, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'A') // set Audio Gain
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // Bandwidth
+    else if (buffer[0] == 'b' && bytes_read == 2) // get bandwidth
+    {
+        rc_socket->write(QString("%1\n").arg(rc_bandwidth, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'B') // set bandwidth
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // FFT Size
+    else if (buffer[0] == 't' && bytes_read == 2) // get FFT size
+    {
+        rc_socket->write(QString("%1\n").arg(rc_fft_size, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'T') // set FFT size
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // FFT Rate
+    else if (buffer[0] == 'y' && bytes_read == 2) // get FFT rate
+    {
+        rc_socket->write(QString("%1\n").arg(rc_fft_rate, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'Y') // set FFT rate
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // FFT Zoom
+    else if (buffer[0] == 'z' && bytes_read == 2) // get Zoom
+    {
+        rc_socket->write(QString("%1\n").arg(rc_fft_zoom, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'Z') // set Zoom
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // USB Mode get/on/off
+    else if (buffer[0] == 'v' && bytes_read == 2) // get USB mode
+    {
+        rc_socket->write(QString("%1\n").arg(rc_usb, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'x' && bytes_read == 2) // Turn USB mode on
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+    else if (buffer[0] == 'X' && bytes_read == 2) // Turn USB mode off
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // Fullscreen mode on/off
+    else if (buffer[0] == 'k') // Turn on Fullscreen
+    {
+        rc_socket->write(QString("%1\n").arg(rc_fullscreen, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'K') // Turn off Fullscreen
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    // UDP Audio Stream on/off
+    else if (buffer[0] == 'u') // Turn on UDP Audio stream
+    {
+        rc_socket->write(QString("%1\n").arg(rc_udp_audio, 0, 'f', 1).toLatin1());
+    }
+    else if (buffer[0] == 'U') // Turn off UDP Audio stream
+    {
+        rc_socket->write("RPRT 2\n");
+    }
+
+    //------------------------
+    // Increase / Decrease Settings
+    // Instead of getting the current value from the gqrx host -> processing on tcp client -> sending new value back to gqrx host in multiple packets, Send a packet to increase current state by value.
+    //
+    // GI 1000 // gain to increase by 1000
+    // GD 1000 // gain to decrease by 1000
+    //
+    // FI 1000 // freq to increase by 1000
+    // FD 1000 // freq to decrease by 1000
+    //
+    //
+    //------------------------
+    else if ((bytes_read >= 2 && buffer[1] == 'I') || (bytes_read >= 2 && buffer[1] == 'D') || (bytes_read >= 2 && buffer[1] == 'C'))
+    {
+        // Gain
+        if (buffer[0] == 'G')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase gain by val
+                rc_socket->write(QString("%1\n").arg(rc_gain, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_gain, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // LNB
+        else if (buffer[0] == 'N')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_lnb, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_lnb, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // PPM
+        else if (buffer[0] == 'J') // was p
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_ppm, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_ppm, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // Squelch
+        else if (buffer[0] == 'S')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_squelch, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_squelch, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // RO
+        else if (buffer[0] == 'R')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_ro, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_ro, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // Freq
+        else if (buffer[0] == 'F')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_freq, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_freq, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // Audio Gain
+        else if (buffer[0] == 'A')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_audio_gain, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_audio_gain, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // Bandwidth
+        else if (buffer[0] == 'B')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_bandwidth, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_bandwidth, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // FFT Size
+        else if (buffer[0] == 'T')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_fft_size, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_fft_size, 0, 'f', 1).toLatin1());
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        // FFT Zoom
+        else if (buffer[0] == 'Z')
+        {
+
+            if (buffer[1] == 'I')
+            {
+                // increase by val
+                rc_socket->write(QString("%1\n").arg(rc_fft_zoom, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'D')
+            {
+               // decrease by val
+               rc_socket->write(QString("%1\n").arg(rc_fft_zoom, 0, 'f', 1).toLatin1());
+            }
+            else if (buffer[1] == 'C')
+            {
+               // zoom center
+               rc_socket->write("RPRT 5\n");
+            }
+            else
+            {
+                rc_socket->write("RPRT 1\n");
+            }
+
+
+        }
+
+        else
+        {
+            rc_socket->write("RPRT 1\n");
+        }
+    }
+
+
+    //------------------------
+    // end new features
+    //------------------------
+
+
+
 
 
     // Gpredict / Gqrx specific commands:
@@ -254,6 +683,10 @@ void RemoteControl::startRead()
 void RemoteControl::setNewFrequency(qint64 freq)
 {
     rc_freq = freq;
+}
+void RemoteControl::setNewPPM(qint64 ppm)
+{
+    rc_ppm = ppm;
 }
 
 /*! \brief Slot called when the filter offset is changed. */

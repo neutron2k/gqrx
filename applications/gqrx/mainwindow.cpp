@@ -242,6 +242,16 @@ MainWindow::MainWindow(const QString cfgfile, bool edit_conf, QWidget *parent) :
     connect(remote, SIGNAL(newMode(int)), this, SLOT(selectDemod(int)));
     connect(remote, SIGNAL(newMode(int)), uiDockRxOpt, SLOT(setCurrentDemod(int)));
 
+
+    //------------------------
+    // start new connects
+
+    connect(remote, SIGNAL(newGain(QString,double)), this, SLOT(setGain(QString,double)));
+
+    // end new connects
+    //------------------------
+
+
     // satellite events
     connect(remote, SIGNAL(satAosEvent()), uiDockAudio, SLOT(startAudioRecorder()));
     connect(remote, SIGNAL(satLosEvent()), uiDockAudio, SLOT(stopAudioRecorder()));
@@ -665,7 +675,6 @@ void MainWindow::setGain(QString name, double gain)
 void MainWindow::setAutoGain(bool enabled)
 {
     rx->set_auto_gain(enabled);
-
     if (!enabled)
     {
         uiDockInputCtl->restoreManualGains(m_settings);

@@ -86,10 +86,27 @@ public slots:
     void setSignalLevel(float level);
     void setMode(int mode);
 
+    //------------------------
+    // start new slots
+
+    void setNewPPM(qint64 ppm);
+
+    // end new slots
+    //------------------------
+
 signals:
     void newFrequency(qint64 freq);
     void newFilterOffset(qint64 offset);
     void newMode(int mode);
+
+    //------------------------
+    // start new signals
+
+    void newGain(QString name, double gain);
+
+    // end new signals
+    //------------------------
+
 
     void satAosEvent(void); /*! Satellite AOS event received through the socket. */
     void satLosEvent(void); /*! Satellite LOS event received through the socket. */
@@ -111,6 +128,27 @@ private:
 
     int         rc_mode;           /*!< Current mode. */
     float       signal_level;      /*!< Signal level in dBFS */
+
+    //------------------------
+    // start new vars
+    // - these are most likely the incorrect data types
+    // - I just added them as floats to test the telnet gets
+    
+    float       rc_gain;           /*!< Gain level */
+    qint64       rc_ppm;            /*!< PPM level */
+    float       rc_lnb;            /*!< LNB level */
+    float       rc_squelch;        /*!< Squelch level */
+    float       rc_ro;             /*!< RO level */
+    float       rc_audio_gain;     /*!< Audio Gain */
+    float       rc_bandwidth;      /*!< Bandwidth level */
+    float       rc_fft_size;       /*!< FFT Size */
+    float       rc_fft_rate;       /*!< FFT Rate */
+    float       rc_fft_zoom;       /*!< FFT Zoom */
+    float       rc_usb;            /*!< USB on/off  */
+    float       rc_fullscreen;     /*!< Fullscreen on/off */
+    float       rc_udp_audio;      /*!< UDP Audio on/off */
+    // end new vars
+    //------------------------
 
     void        setNewRemoteFreq(qint64 freq);
     int         modeStrToInt(const char *buffer);
